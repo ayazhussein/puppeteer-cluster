@@ -1,4 +1,3 @@
-
 import Job, { ExecuteResolve, ExecuteReject, ExecuteCallbacks } from './Job';
 import Display from './Display';
 import * as util from './util';
@@ -88,7 +87,7 @@ export default class Cluster<JobData = any, ReturnData = any> extends EventEmitt
 
     private taskFunction: TaskFunction<JobData, ReturnData> | null = null;
     private idleResolvers: (() => void)[] = [];
-    private waitForOneResolvers: ((data:JobData) => void)[] = [];
+    private waitForOneResolvers: ((data: JobData) => void)[] = [];
     private browser: ConcurrencyImplementation | null = null;
 
     private isClosed = false;
@@ -105,9 +104,9 @@ export default class Cluster<JobData = any, ReturnData = any> extends EventEmitt
 
     private checkForWorkInterval: NodeJS.Timer | null = null;
 
-    public static async launch(options: ClusterOptionsArgument) {
+    public static async launch<JobData extends string | { url?: string, [p: string]: any } | any = any, ReturnData = any >(options: ClusterOptionsArgument) {
         debug('Launching');
-        const cluster = new Cluster(options);
+        const cluster = new Cluster<JobData, ReturnData>(options);
         await cluster.init();
 
         return cluster;
@@ -220,7 +219,7 @@ export default class Cluster<JobData = any, ReturnData = any> extends EventEmitt
     }
 
     private nextWorkCall: number = 0;
-    private workCallTimeout: NodeJS.Timer|null = null;
+    private workCallTimeout: NodeJS.Timer | null = null;
 
     // check for new work soon (wait if there will be put more data into the queue, first)
     private async work() {
@@ -379,7 +378,7 @@ export default class Cluster<JobData = any, ReturnData = any> extends EventEmitt
     // Type Guard for TypeScript
     private isTaskFunction(
         data: JobData | TaskFunction<JobData, ReturnData>,
-    ) : data is TaskFunction<JobData, ReturnData> {
+    ): data is TaskFunction<JobData, ReturnData> {
         return (typeof data === 'function');
     }
 
@@ -440,7 +439,7 @@ export default class Cluster<JobData = any, ReturnData = any> extends EventEmitt
     }
 
     public waitForOne(): Promise<JobData> {
-        return new Promise(resolve  => this.waitForOneResolvers.push(resolve));
+        return new Promise(resolve => this.waitForOneResolvers.push(resolve));
     }
 
     public async close(): Promise<void> {

@@ -252,7 +252,7 @@ describe('options', () => {
             });
 
             test('sameDomainDelay with one worker', async () => {
-                const cluster = await Cluster.launch({
+                const cluster = await Cluster.launch<{ counterShouldBe: number, url: string }>({
                     concurrency,
                     puppeteerOptions: { args: ['--no-sandbox'] },
                     maxConcurrency: 1,
@@ -323,7 +323,7 @@ describe('options', () => {
                     throw err;
                 });
 
-                cluster.queue(async ({ page, data }: { page: any, data: any}) => {
+                cluster.queue(async ({ page, data }: { page: any, data: any }) => {
                     expect(page).toBeDefined();
                     expect(data).toBeUndefined();
                 });
@@ -360,7 +360,7 @@ describe('options', () => {
                     expect(url).toBe('works too');
                 });
                 cluster.queue('works');
-                cluster.queue(async ({ page, data }: { page: any, data: any}) => {
+                cluster.queue(async ({ page, data }: { page: any, data: any }) => {
                     expect(page).toBeDefined();
                     expect(data).toBeUndefined();
                 });
@@ -371,7 +371,7 @@ describe('options', () => {
             });
 
             test('works with complex objects', async () => {
-                const cluster = await Cluster.launch({
+                const cluster = await Cluster.launch<{ a: { b: string } }>({
                     concurrency,
                     puppeteerOptions: { args: ['--no-sandbox'] },
                     maxConcurrency: 1,
@@ -410,7 +410,7 @@ describe('options', () => {
 
             test('execute', async () => {
                 expect.assertions(2);
-                const cluster = await Cluster.launch({
+                const cluster = await Cluster.launch<string | number>({
                     concurrency,
                     puppeteerOptions: { args: ['--no-sandbox'] },
                     maxConcurrency: 2,
@@ -460,7 +460,7 @@ describe('options', () => {
             test('execute/queue errors', async () => {
                 expect.assertions(2);
 
-                const cluster = await Cluster.launch({
+                const cluster = await Cluster.launch<string>({
                     concurrency,
                     puppeteerOptions: { args: ['--no-sandbox'] },
                     maxConcurrency: 1,
@@ -490,7 +490,7 @@ describe('options', () => {
             test('event: queue', async () => {
                 expect.assertions(12);
 
-                const cluster = await Cluster.launch({
+                const cluster = await Cluster.launch<string>({
                     concurrency,
                     puppeteerOptions: { args: ['--no-sandbox'] },
                     maxConcurrency: 1,
@@ -499,8 +499,10 @@ describe('options', () => {
                     throw err;
                 });
 
-                const func2 = async () => {};
-                const func3 = async () => {};
+                const func2 = async () => {
+                };
+                const func3 = async () => {
+                };
 
                 let i = 0;
                 cluster.on('queue', (data, func) => {
@@ -552,7 +554,7 @@ describe('options', () => {
         expect.assertions(2);
 
         const executablePath = (puppeteer as any).executablePath(); // TODO why does this not work anymore?
-        const cluster = await Cluster.launch({
+        const cluster = await Cluster.launch<string>({
             concurrency: Cluster.CONCURRENCY_BROWSER,
             puppeteerOptions: {
                 executablePath,
@@ -585,12 +587,15 @@ describe('options', () => {
 
             class CustomConcurrency extends ConcurrencyImplementation {
                 private browser: puppeteer.Browser | undefined = undefined;
+
                 public async init() {
                     this.browser = await this.puppeteer.launch(this.options);
                 }
+
                 public async close() {
                     await (this.browser as puppeteer.Browser).close();
                 }
+
                 public async workerInstance() {
                     return {
                         jobInstance: async () => {
@@ -614,12 +619,13 @@ describe('options', () => {
                         // no repair for this tests, but you should really implement this (!!!)
                         // have a look at Browser, Context or Page in built-in directory for a
                         // full implementation
-                        repair: async () => {},
+                        repair: async () => {
+                        },
                     };
                 }
             }
 
-            const cluster = await Cluster.launch({
+            const cluster = await Cluster.launch<string>({
                 concurrency: CustomConcurrency,
                 puppeteerOptions: { args: ['--no-sandbox'] },
                 maxConcurrency: 1,
@@ -643,7 +649,7 @@ describe('options', () => {
         test('Reuse existing implementation', async () => {
             expect.assertions(2);
 
-            const cluster = await Cluster.launch({
+            const cluster = await Cluster.launch<string>({
                 concurrency: Browser, // use one of the existing implementations
                 puppeteerOptions: { args: ['--no-sandbox'] },
                 maxConcurrency: 1,
@@ -681,14 +687,18 @@ describe('options', () => {
             const perBrowserOptions = [
                 { args: ['--test1'] },
             ];
+
             class TestConcurrency extends ConcurrencyImplementation {
                 private browser: puppeteer.Browser | undefined = undefined;
+
                 public async init() {
                     this.browser = await this.puppeteer.launch(this.options);
                 }
+
                 public async close() {
                     await (this.browser as puppeteer.Browser).close();
                 }
+
                 public async workerInstance(puppeteerOptions: puppeteer.LaunchOptions) {
                     expect(puppeteerOptions).toBe(perBrowserOptions[0]);
                     return {
@@ -713,7 +723,8 @@ describe('options', () => {
                         // no repair for this tests, but you should really implement this (!!!)
                         // have a look at Browser, Context or Page in built-in directory for a
                         // full implementation
-                        repair: async () => {},
+                        repair: async () => {
+                        },
                     };
                 }
             }
@@ -769,7 +780,7 @@ describe('options', () => {
         afterEach(cleanup);
 
         test('monitoring enabled', async () => {
-            const cluster = await Cluster.launch({
+            const cluster = await Cluster.launch<string>({
                 concurrency: Cluster.CONCURRENCY_CONTEXT,
                 puppeteerOptions: { args: ['--no-sandbox'] },
                 maxConcurrency: 1,
